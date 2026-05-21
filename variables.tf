@@ -1,7 +1,7 @@
 variable "aws_region" {
   description = "AWS region to deploy into"
   type        = string
-  default     = "eu-west-3" # Paris
+  default     = "eu-west-3"
 }
 
 variable "admin_ip" {
@@ -16,6 +16,11 @@ variable "ssh_public_key" {
 
 variable "dshield_email" {
   description = "Email address registered on https://isc.sans.edu"
+  type        = string
+}
+
+variable "dshield_userid" {
+  description = "Numeric user ID from https://isc.sans.edu/myaccount.html (not the email)"
   type        = string
 }
 

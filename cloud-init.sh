@@ -35,7 +35,7 @@ ADMIN_NET="${admin_ip}/32"
 mkdir -p /etc/
 cat > /etc/dshield.ini << INIEOF
 [DShield]
-userid=${dshield_email}
+userid=${dshield_userid}
 apikey=${dshield_apikey}
 email=${dshield_email}
 interface=ens5
