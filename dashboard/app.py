@@ -37,7 +37,7 @@ def load_admin_ips():
     try:
         cfg = configparser.ConfigParser()
         cfg.read(DSHIELD_INI)
-        raw = cfg.get("DShield", "nofwlog", fallback="")
+        raw = cfg.get("DShield", "nofwlogging", fallback="")
         for token in raw.split():
             ip = token.split("/")[0]
             if re.match(r"^\d+\.\d+\.\d+\.\d+$", ip):

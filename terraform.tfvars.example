@@ -11,4 +11,5 @@ ssh_public_key = "ssh-ed25519 AAAA..."
 
 # SANS ISC account: https://isc.sans.edu
 dshield_email  = "you@example.com"
+dshield_userid = "123456"
 dshield_apikey = "your-api-key-from-isc.sans.edu/myaccount.html"

@@ -42,6 +42,7 @@ terraform apply
 | `admin_ip` | Your public IP for admin SSH access | yes |
 | `ssh_public_key` | SSH public key content | yes |
 | `dshield_email` | SANS ISC account email | yes |
+| `dshield_userid` | Numeric user ID from isc.sans.edu/myaccount.html | yes |
 | `dshield_apikey` | DShield API key | yes |
 
 ## Estimated cost
@@ -59,8 +60,11 @@ terraform apply
 # Get SSH command
 terraform output ssh_command
 
-# Check DShield service
-ssh -p 12222 admin@<ip> "sudo systemctl status dshield"
+# Check DShield status (green = honeypot reporting OK)
+ssh -p 12222 ubuntu@<ip> "sudo /opt/dshield/bin/status.sh"
+
+# Threat intel dashboard (admin IP only)
+terraform output dashboard_url
 ```
 
 Data appears on https://isc.sans.edu/myreports.html within 24 hours.
