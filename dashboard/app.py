@@ -8,6 +8,8 @@ import re
 import json
 import gzip
 import glob
+import configparser
+import os
 from collections import Counter, defaultdict
 from datetime import datetime, timezone
 from flask import Flask, jsonify, render_template_string
@@ -17,6 +19,7 @@ app = Flask(__name__)
 DSHIELD_LOG  = "/var/log/dshield.log"
 COWRIE_LOG   = "/srv/cowrie/var/log/cowrie/cowrie.json"
 COWRIE_GLOB  = "/srv/cowrie/var/log/cowrie/cowrie.json*"
+DSHIELD_INI  = "/etc/dshield.ini"
 
 PORT_NAMES = {
     "22": "SSH", "23": "Telnet", "80": "HTTP",
@@ -25,21 +28,49 @@ PORT_NAMES = {
     "7547": "TR-069", "5555": "ADB", "9000": "misc",
 }
 
+EXCLUDE_PORTS = {"8888", "12222"}
+
+
+def load_admin_ips():
+    """Read admin IPs from dshield.ini — never hardcoded in source."""
+    ips = set()
+    try:
+        cfg = configparser.ConfigParser()
+        cfg.read(DSHIELD_INI)
+        raw = cfg.get("DShield", "nofwlog", fallback="")
+        for token in raw.split():
+            ip = token.split("/")[0]
+            if re.match(r"^\d+\.\d+\.\d+\.\d+$", ip):
+                ips.add(ip)
+    except Exception:
+        pass
+    env = os.environ.get("ADMIN_IPS", "")
+    if env:
+        ips.update(env.split(","))
+    return ips
+
 
 def parse_dshield():
     entries = []
-    pat = re.compile(
-        r"SRC=(\S+).*?DPT=(\d+).*?PROTO=(\w+)"
-    )
+    admin_ips = load_admin_ips()
+    pat_src   = re.compile(r"SRC=(\S+)")
+    pat_dpt   = re.compile(r"DPT=(\d+)")
+    pat_proto = re.compile(r"PROTO=(\w+)")
     try:
         with open(DSHIELD_LOG) as f:
             for line in f:
-                m = pat.search(line)
-                if m:
+                ms = pat_src.search(line)
+                md = pat_dpt.search(line)
+                mp = pat_proto.search(line)
+                if ms and md and mp:
+                    src = ms.group(1)
+                    dpt = md.group(1)
+                    if src in admin_ips or dpt in EXCLUDE_PORTS:
+                        continue
                     entries.append({
-                        "src": m.group(1),
-                        "dpt": m.group(2),
-                        "proto": m.group(3),
+                        "src":   src,
+                        "dpt":   dpt,
+                        "proto": mp.group(1),
                     })
     except FileNotFoundError:
         pass
