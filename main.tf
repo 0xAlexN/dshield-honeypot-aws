@@ -112,6 +112,14 @@ resource "aws_security_group" "honeypot" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
+  ingress {
+    description = "Threat intel dashboard - restricted to operator IP"
+    from_port   = 8888
+    to_port     = 8888
+    protocol    = "tcp"
+    cidr_blocks = ["${var.admin_ip}/32"]
+  }
+
   egress {
     from_port   = 0
     to_port     = 0
