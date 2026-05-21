@@ -41,7 +41,7 @@ email=${dshield_email}
 interface=ens5
 adminport=${admin_ssh_port}
 localnet=10.0.0.0/8 ${admin_ip}/32
-nofwlog=10.0.0.0/8 ${admin_ip}/32
+nofwlogging=10.0.0.0/8 ${admin_ip}/32
 honeypotip=$PUBLIC_IP
 authenticationkey=${dshield_apikey}
 INIEOF
@@ -55,11 +55,11 @@ cd /opt
 git clone https://github.com/DShield-ISC/dshield.git
 
 # Fix permissions for SSL cert generation
-chown -R admin:admin /opt/dshield/
+chown -R ubuntu:ubuntu /opt/dshield/
 
 # Run in --update mode: uses dshield.ini, no interactive prompts
 cd /opt/dshield
-sudo -u admin bash bin/install.sh --update || true
+sudo -u ubuntu bash bin/install.sh --update || true
 
 # -------------------------------------------------------------------
 # 4. UFW firewall rules
@@ -90,7 +90,7 @@ systemctl restart fail2ban
 # -------------------------------------------------------------------
 # 6. Weekly status check cron
 # -------------------------------------------------------------------
-echo "0 6 * * 1 admin /opt/dshield/bin/status.sh >> /var/log/dshield-status.log 2>&1" \
+echo "0 6 * * 1 ubuntu /opt/dshield/bin/status.sh >> /var/log/dshield-status.log 2>&1" \
   > /etc/cron.d/dshield-check
 
 echo "=== Bootstrap complete — rebooting ==="
