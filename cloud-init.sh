@@ -124,10 +124,11 @@ systemctl restart fail2ban
 # 8. Threat intel dashboard (Flask, port 8888)
 # -------------------------------------------------------------------
 install -d -m 0755 /opt/dshield-dashboard
-echo "${dashboard_app_b64}" | base64 -d > /opt/dshield-dashboard/app.py
+REPO_RAW="https://raw.githubusercontent.com/0xAlexN/dshield-honeypot-aws/main"
+curl -sf "$REPO_RAW/dashboard/app.py" -o /opt/dshield-dashboard/app.py
 chmod 0644 /opt/dshield-dashboard/app.py
 
-echo "${dashboard_service_b64}" | base64 -d > /etc/systemd/system/dshield-dashboard.service
+curl -sf "$REPO_RAW/dashboard/dshield-dashboard.service" -o /etc/systemd/system/dshield-dashboard.service
 
 systemctl daemon-reload
 systemctl enable dshield-dashboard.service

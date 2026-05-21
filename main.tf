@@ -155,13 +155,11 @@ resource "aws_instance" "honeypot" {
   }
 
   user_data = templatefile("${path.module}/cloud-init.sh", {
-    dshield_email         = var.dshield_email
-    dshield_apikey        = var.dshield_apikey
-    admin_ssh_port        = 12222
-    admin_ip              = var.admin_ip
-    dshield_userid        = var.dshield_userid
-    dashboard_app_b64     = base64encode(file("${path.module}/dashboard/app.py"))
-    dashboard_service_b64 = base64encode(file("${path.module}/dashboard/dshield-dashboard.service"))
+    dshield_email  = var.dshield_email
+    dshield_apikey = var.dshield_apikey
+    admin_ssh_port = 12222
+    admin_ip       = var.admin_ip
+    dshield_userid = var.dshield_userid
   })
 
   tags = {
