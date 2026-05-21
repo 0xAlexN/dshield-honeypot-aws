@@ -1,0 +1,14 @@
+# Copy this file to terraform.tfvars and fill in your values
+# cp terraform.tfvars.example terraform.tfvars
+
+aws_region = "eu-west-3"
+
+# curl ifconfig.me
+admin_ip = "X.X.X.X"
+
+# cat ~/.ssh/id_ed25519.pub
+ssh_public_key = "ssh-ed25519 AAAA..."
+
+# SANS ISC account: https://isc.sans.edu
+dshield_email  = "you@example.com"
+dshield_apikey = "your-api-key-from-isc.sans.edu/myaccount.html"
