@@ -12,7 +12,7 @@ apt-get update -qq
 apt-get install -y -qq \
   git curl wget unzip fail2ban ufw \
   python3 python3-pip python3-flask \
-  jq net-tools dialog iptables-persistent
+  jq net-tools dialog
 
 # Move admin SSH to non-standard port
 sed -i "s/^#Port 22/Port ${admin_ssh_port}/" /etc/ssh/sshd_config
