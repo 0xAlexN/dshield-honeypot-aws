@@ -66,7 +66,34 @@ INIEOF
 chmod 600 /etc/dshield.ini
 
 # -------------------------------------------------------------------
-# 4. Clone and install DShield in unattended mode
+# 4. postinstall.sh — DShield runs this after every install/update.
+# Restores UFW (DShield removes it during install) and SSH keys.
+# -------------------------------------------------------------------
+mkdir -p /root/bin
+cat > /root/bin/postinstall.sh << POSTINSTALL
+#!/bin/bash
+set -u
+
+apt-get install -y ufw
+
+ufw allow from ${admin_ip} to any port ${admin_ssh_port} proto tcp comment "Admin SSH"
+ufw allow 22/tcp comment "DShield SSH decoy"
+ufw allow 23/tcp comment "DShield Telnet decoy"
+ufw allow 80/tcp comment "DShield HTTP decoy"
+ufw allow from ${admin_ip} to any port 8888 proto tcp comment "Dashboard (admin only)"
+ufw --force enable
+
+if [ -f /root/.ssh-backup/ubuntu.authorized_keys ]; then
+  install -d -m 0700 -o ubuntu -g ubuntu /home/ubuntu/.ssh
+  install -m 0600 -o ubuntu -g ubuntu \
+    /root/.ssh-backup/ubuntu.authorized_keys \
+    /home/ubuntu/.ssh/authorized_keys
+fi
+POSTINSTALL
+chmod +x /root/bin/postinstall.sh
+
+# -------------------------------------------------------------------
+# 5. Clone and install DShield in unattended mode
 # -------------------------------------------------------------------
 cd /opt
 git clone https://github.com/DShield-ISC/dshield.git
@@ -79,7 +106,7 @@ cd /opt/dshield
 sudo -u ubuntu bash bin/install.sh --update || true
 
 # -------------------------------------------------------------------
-# 5. Restore SSH keys (DShield may have clobbered them)
+# 6. Restore SSH keys (DShield may have clobbered them)
 # -------------------------------------------------------------------
 install -d -m 0700 -o ubuntu -g ubuntu /home/ubuntu/.ssh
 if [ -f /root/.ssh-backup/ubuntu.authorized_keys ]; then
@@ -92,19 +119,6 @@ if [ -f /root/.ssh-backup/root.authorized_keys ]; then
     /root/.ssh-backup/root.authorized_keys \
     /root/.ssh/authorized_keys
 fi
-
-# -------------------------------------------------------------------
-# 6. UFW firewall rules
-# -------------------------------------------------------------------
-ufw --force reset
-ufw default deny incoming
-ufw default allow outgoing
-ufw allow ${admin_ssh_port}/tcp comment "Admin SSH"
-ufw allow 22/tcp  comment "DShield SSH decoy"
-ufw allow 23/tcp  comment "DShield Telnet decoy"
-ufw allow 80/tcp  comment "DShield HTTP decoy"
-ufw allow from ${admin_ip} to any port 8888 proto tcp comment "Dashboard (admin only)"
-ufw --force enable
 
 # -------------------------------------------------------------------
 # 7. fail2ban - protect admin SSH port
@@ -146,7 +160,7 @@ ADMIN_IP="__ADMIN_IP__"
 ADMIN_PORT="__ADMIN_PORT__"
 
 # Give DShield's firewall a moment to finish setting up
-sleep 10
+sleep 30
 
 # Restore SSH keys if DShield wiped them on boot
 if [ -f /root/.ssh-backup/ubuntu.authorized_keys ]; then
@@ -172,7 +186,7 @@ chmod 0755 /usr/local/sbin/dshield-extras.sh
 cat > /etc/systemd/system/dshield-extras.service << 'UNIT'
 [Unit]
 Description=DShield extras (preserve admin access after DShield firewall reset)
-After=network-online.target
+After=multi-user.target
 Wants=network-online.target
 
 [Service]
@@ -188,10 +202,16 @@ systemctl daemon-reload
 systemctl enable dshield-extras.service
 
 # -------------------------------------------------------------------
-# 10. Weekly status check cron
+# 10. Cron: weekly status check + @reboot SSH key restore (belt-and-
+# suspenders alongside dshield-extras.service, in case the unit is
+# delayed or fails after a DShield-triggered reboot).
 # -------------------------------------------------------------------
 echo "0 6 * * 1 ubuntu /opt/dshield/bin/status.sh >> /var/log/dshield-status.log 2>&1" \
   > /etc/cron.d/dshield-check
+
+cat > /etc/cron.d/dshield-ssh-restore << 'CRON'
+@reboot root sleep 60 && install -m 0600 -o ubuntu -g ubuntu /root/.ssh-backup/ubuntu.authorized_keys /home/ubuntu/.ssh/authorized_keys
+CRON
 
 echo "=== Bootstrap complete — rebooting ==="
 reboot
